@@ -110,7 +110,7 @@ routes  →  controllers  →  services  →  repositories  →  base de datos
 
 - **Controllers:** reciben la request, validan la entrada y devuelven la respuesta. No contienen lógica de negocio.
 - **Services:** contienen la lógica de negocio. No conocen Express (no reciben `req` ni `res`).
-- **Repositories:** único punto de acceso a la base de datos (a los modelos de Sequelize o Mongoose). Cada repositorio se define primero como **interfaz** y luego se implementa.
+- **Repositories:** único punto de acceso a la base de datos (a los modelosde S equelize o Mongoose). Cada repositorio se define primero como **interfaz** y luego se implementa.
 
 Las dependencias se inyectan **por constructor**, y todos los objetos se crean y conectan en un único lugar: `src/main.ts` (*composition root*).
 
