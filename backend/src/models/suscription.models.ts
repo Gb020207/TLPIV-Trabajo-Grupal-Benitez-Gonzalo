@@ -1,4 +1,5 @@
-import { Model,Optional,DataType,Sequelize, DataTypes } from "sequelize";
+import { Model, Sequelize, DataTypes } from "sequelize";
+import type { Optional } from "sequelize"
 
 interface SuscriptionAttributes{
     id: number;
