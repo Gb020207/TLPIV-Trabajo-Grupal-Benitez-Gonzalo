@@ -1,5 +1,5 @@
-import {Request, Response} from "express";
-import {Role} from "../models/roles.models.ts";
+import type {Request, Response} from "express";
+import {Role} from "../models/roles.models.js";
 
 interface CreateRoleBody{
     name: string

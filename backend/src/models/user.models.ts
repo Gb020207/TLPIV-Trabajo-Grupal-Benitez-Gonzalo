@@ -1,4 +1,5 @@
-import { DataTypes, Model,Optional,Sequelize, type Identifier } from "sequelize";
+import { DataTypes, Model, Sequelize } from "sequelize";
+import type { Optional } from "sequelize"
 
 
 interface UserAttributes{
@@ -29,7 +30,7 @@ export class User extends Model<UserAttributes,UserCreationAttributes> implement
     
         },{
             sequelize,
-            tableName:"user",
+            tableName:"users",
             timestamps:true,
         })
     }
