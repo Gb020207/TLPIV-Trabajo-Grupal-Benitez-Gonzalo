@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
+import { fileURLToPath } from "node:url";
 
-dotenv.config();
+dotenv.config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 
 export const env = {
   dbHost: process.env.DB_HOST ?? "localhost",
