@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import { Books, type BookStatus } from "../models/book.models.js";
+import type { BookStatus } from "../models/book.models.js";
+import type { BookService } from "../services/BookService.js";
 
 const bookStatuses: readonly BookStatus[] = [
   "DISPONIBLE",
@@ -31,9 +32,11 @@ function isBookStatus(value: unknown): value is BookStatus {
 }
 
 class BookControllers {
+  constructor(private readonly books: BookService) {}
+
   async listBooks(_request: Request, response: Response): Promise<void> {
     try {
-      const books = await Books.findAll({ order: [["id", "ASC"]] });
+      const books = await this.books.list();
       response.status(200).json(books);
     } catch (error) {
       console.error("Failed to list books:", error);
@@ -49,7 +52,7 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.findByPk(id);
+      const book = await this.books.findById(id);
       if (!book) {
         response.status(404).json({ message: "Libro no encontrado" });
         return;
@@ -79,7 +82,7 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.create({
+      const book = await this.books.create({
         title: title.trim(),
         description: description.trim(),
       });
@@ -128,13 +131,13 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.findByPk(id);
+      const book = await this.books.findById(id);
       if (!book) {
         response.status(404).json({ message: "Libro no encontrado" });
         return;
       }
 
-      await book.update(values);
+      await this.books.update(book, values);
       response.status(200).json(book);
     } catch (error) {
       console.error("Failed to update book:", error);
@@ -165,13 +168,13 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.findByPk(id);
+      const book = await this.books.findById(id);
       if (!book) {
         response.status(404).json({ message: "Libro no encontrado" });
         return;
       }
 
-      await book.update({ status });
+      await this.books.changeStatus(book, status);
       response.status(200).json(book);
     } catch (error) {
       console.error("Failed to change book status:", error);
@@ -187,13 +190,13 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.findByPk(id);
+      const book = await this.books.findById(id);
       if (!book) {
         response.status(404).json({ message: "Libro no encontrado" });
         return;
       }
 
-      await book.destroy();
+      await this.books.delete(book);
       response.status(204).end();
     } catch (error) {
       console.error("Failed to delete book:", error);

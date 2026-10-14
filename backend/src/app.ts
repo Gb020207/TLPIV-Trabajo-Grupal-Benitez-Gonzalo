@@ -1,9 +1,13 @@
 import cors from "cors";
 import express from "express";
-import authRoutes from "./routes/auth.routes.js";
-import booksRoutes from "./routes/books.routes.js";
+import { createAuthRoutes } from "./routes/auth.routes.js";
+import { createBooksRoutes } from "./routes/books.routes.js";
+import { createNotificationRoutes } from "./routes/notification.routes.js";
+import { createSubscriptionRoutes } from "./routes/subscription.routes.js";
+import { createUserRoutes } from "./routes/user.routes.js";
+import type { ApplicationServices } from "./services/ApplicationServices.js";
 
-export function createApp(): express.Express {
+export function createApp(services: ApplicationServices): express.Express {
   const app = express();
 
   app.use(cors());
@@ -17,8 +21,11 @@ export function createApp(): express.Express {
     });
   });
 
-  app.use("/api/auth", authRoutes);
-  app.use("/api/books", booksRoutes);
+  app.use("/api/auth", createAuthRoutes(services.auth));
+  app.use("/api/books", createBooksRoutes(services.books));
+  app.use("/api/subscriptions", createSubscriptionRoutes(services.subscriptions));
+  app.use("/api/notifications", createNotificationRoutes(services.notifications));
+  app.use("/api/users", createUserRoutes(services.users));
 
   return app;
 }

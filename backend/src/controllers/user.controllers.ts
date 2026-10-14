@@ -1,55 +1,51 @@
-import type {Request, Response} from "express";
-import {User} from "../models/user.models.js";
-import {Role} from "../models/roles.models.js"
+import type { Request, Response } from "express";
+import type { UserService } from "../services/UserService.js";
 
-interface CreateUserBody{
-    name: string;
-    email: string;
-    password: string;
+function parseId(value: unknown): number | null {
+  const id = typeof value === "string" ? Number(value) : value;
+  return typeof id === "number" && Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
-class UserControllers{
-    async createUser(req: Request<{}, {}, CreateUserBody>, res: Response){
-        try{
-            const {name, email, password} =req.body;
-            if (!name || typeof name !== "string" || name.trim() === ""){
-                return res.status(400).json({
-                    message: "El Nombre es obligatorio"
-                });
-            };
-            if (!email || typeof email !== "string" || email.trim() ===""){
-                return res.status(400).json({
-                    message: "El Email es obligatorio"
-                });
-            }
-            if (!password || typeof password !== "string" || password.trim() ===""){
-                return res.status(400).json({
-                    message: "La Contraseña es obligatoria"
-                });
-            }
-            const role = await Role.findOne({
-                where: {name: "USER"}
-            })
-            if (!role){
-                return res.status(500).json({
-                    message: "Rol USER no configurado"
-                })
-            }
-            const user = await User.create({
-                name: name.trim(),
-                email: email.trim(),
-                password,
-                roleId: role.id
-            });
-            console.log(`Usuario creado: ${user.name}`);
-            return res.status(201).json(user)
-        }catch (error){
-            console.error(error);
-            return res.status(500).json({
-                message: 'Error interno del servidor'
-            })
-        }
+class UserControllers {
+  constructor(private readonly users: UserService) {}
+
+  async listUsers(_request: Request, response: Response): Promise<void> {
+    try {
+      response.status(200).json(await this.users.list());
+    } catch (error) {
+      console.error("Failed to list users:", error);
+      response.status(500).json({ message: "Error interno del servidor" });
     }
+  }
+
+  async assignRole(request: Request, response: Response): Promise<void> {
+    const userId = parseId(request.params.id);
+    const roleId =
+      typeof request.body === "object" && request.body !== null
+        ? parseId(request.body.roleId)
+        : null;
+    if (userId === null || roleId === null) {
+      response.status(400).json({ message: "El ID del usuario o del rol no es válido" });
+      return;
+    }
+
+    try {
+      const result = await this.users.assignRole(userId, roleId);
+      if (!result) {
+        response.status(404).json({ message: "Usuario o rol no encontrado" });
+        return;
+      }
+      response.status(200).json({
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        role: { id: result.role.id, name: result.role.name },
+      });
+    } catch (error) {
+      console.error("Failed to assign user role:", error);
+      response.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
 }
 
 export default UserControllers;

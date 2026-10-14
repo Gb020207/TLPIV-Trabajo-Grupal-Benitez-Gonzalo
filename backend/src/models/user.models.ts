@@ -29,7 +29,7 @@ export class User extends Model<UserAttributes,UserCreationAttributes> implement
     
         },{
             sequelize,
-            tableName:"users",
+            tableName:"user",
             timestamps:true,
         })
     }

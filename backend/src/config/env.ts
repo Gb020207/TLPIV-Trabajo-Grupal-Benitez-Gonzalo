@@ -13,4 +13,18 @@ export const env = {
   apiPort: Number(process.env.API_PORT ?? 3000),
 
   jwtSecret: process.env.JWT_SECRET ?? "development-secret",
+  seedUsers: {
+    admin: {
+      email: process.env.SEED_ADMIN_EMAIL ?? "",
+      password: process.env.SEED_ADMIN_PASSWORD ?? "",
+    },
+    operator: {
+      email: process.env.SEED_OPERATOR_EMAIL ?? "",
+      password: process.env.SEED_OPERATOR_PASSWORD ?? "",
+    },
+    user: {
+      email: process.env.SEED_USER_EMAIL ?? "",
+      password: process.env.SEED_USER_PASSWORD ?? "",
+    },
+  },
 };

@@ -1,7 +1,20 @@
+import bcrypt from "bcrypt";
 import type { Sequelize, Transaction } from "sequelize";
 import { Permission } from "../models/permission.js";
 import { RolePermission } from "../models/role.models.js";
 import { Role } from "../models/roles.models.js";
+import { User } from "../models/user.models.js";
+
+export interface SeedUser {
+    email: string;
+    password: string;
+}
+
+export interface SeedUsers {
+    admin: SeedUser;
+    operator: SeedUser;
+    user: SeedUser;
+}
 
 const roles = [
     {
@@ -42,7 +55,10 @@ const roles = [
     },
 ] as const;
 
-export async function seedRolesAndPermissions(sequelize: Sequelize): Promise<void> {
+export async function seedRolesAndPermissions(
+    sequelize: Sequelize,
+    seedUsers: SeedUsers,
+): Promise<void> {
     await sequelize.transaction(async (transaction: Transaction) => {
         const permissionNames = [...new Set(roles.flatMap((role) => role.permissions))];
         const permissionsByName = new Map<string, Permission>();
@@ -78,6 +94,44 @@ export async function seedRolesAndPermissions(sequelize: Sequelize): Promise<voi
             });
 
             await RolePermission.bulkCreate(rolePermissionRows, { transaction });
+        }
+
+        for (const [roleName, credentials] of [
+            ["admin", seedUsers.admin],
+            ["operador", seedUsers.operator],
+            ["usuario", seedUsers.user],
+        ] as const) {
+            if (
+                !credentials.email.trim() ||
+                !credentials.password ||
+                credentials.password.length < 8
+            ) {
+                throw new Error(`Seed credentials for role "${roleName}" are invalid.`);
+            }
+
+            const role = await Role.findOne({
+                where: { name: roleName },
+                transaction,
+            });
+            if (!role) {
+                throw new Error(`Seed role "${roleName}" is missing.`);
+            }
+
+            const email = credentials.email.trim().toLowerCase();
+            const password = await bcrypt.hash(credentials.password, 10);
+            const [user, created] = await User.findOrCreate({
+                where: { email },
+                defaults: {
+                    name: roleName,
+                    email,
+                    password,
+                    roleId: role.id,
+                },
+                transaction,
+            });
+            if (!created && user.roleId !== role.id) {
+                await user.update({ roleId: role.id }, { transaction });
+            }
         }
     });
 }
