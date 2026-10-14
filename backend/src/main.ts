@@ -3,8 +3,11 @@ import { DatabaseConnection } from "./config/db.js";
 import { env } from "./config/env.js";
 import { seedRolesAndPermissions } from "./database/seed.js";
 import { initializeModels } from "./models/associations.js";
+import BookControllers from "./controllers/book.controllers.js";
 import { EventPublisher } from "./observer/EventPublisher.js";
 import { NotifierFactory } from "./notifications/NotifierFactory.js";
+import { BookRepository } from "./repositories/BookRepository.js";
+import { BookService } from "./services/BookService.js";
 import { NotificationService } from "./services/NotificationService.js";
 
 async function start(): Promise<void> {
@@ -23,7 +26,11 @@ async function start(): Promise<void> {
     const eventPublisher = new EventPublisher();
     eventPublisher.attach(new NotificationService(new NotifierFactory()));
 
-    const app = createApp(eventPublisher);
+    const bookRepository = new BookRepository();
+    const bookService = new BookService(bookRepository, eventPublisher);
+    const bookControllers = new BookControllers(bookService);
+
+    const app = createApp(bookControllers);
     app.listen(env.apiPort, () => {
         console.log(`Backend listening on port ${env.apiPort}`);
     });

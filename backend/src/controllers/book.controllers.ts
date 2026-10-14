@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
-import { Books, type BookStatus } from "../models/book.models.js";
-import type { ISubject } from "../observer/ISubject.js";
-import type { BookStatusChangedEvent } from "../observer/book-status-event.js";
+import type { BookStatus } from "../models/book.models.js";
+import { BookService, BookServiceError } from "../services/BookService.js";
 
 const bookStatuses: readonly BookStatus[] = [
   "DISPONIBLE",
@@ -17,10 +16,6 @@ function parseBookId(value: unknown): number | null {
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -33,15 +28,13 @@ function isBookStatus(value: unknown): value is BookStatus {
 }
 
 class BookControllers {
-  constructor(private readonly eventPublisher: ISubject) {}
+  constructor(private readonly bookService: BookService) {}
 
   async listBooks(_request: Request, response: Response): Promise<void> {
     try {
-      const books = await Books.findAll({ order: [["id", "ASC"]] });
-      response.status(200).json(books);
+      response.status(200).json(await this.bookService.listBooks());
     } catch (error) {
-      console.error("Failed to list books:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to list books:");
     }
   }
 
@@ -53,96 +46,68 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.findByPk(id);
-      if (!book) {
-        response.status(404).json({ message: "Libro no encontrado" });
-        return;
-      }
-
-      response.status(200).json(book);
+      response.status(200).json(await this.bookService.getBook(id));
     } catch (error) {
-      console.error("Failed to get book:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to get book:");
     }
   }
 
-  async createBook(
-    request: Request,
-    response: Response,
-  ): Promise<void> {
-    if (!isRecord(request.body)) {
-      response.status(400).json({ message: "El cuerpo de la solicitud no es válido" });
-      return;
-    }
-    const { title, description } = request.body;
-    if (!isNonEmptyString(title) || !isNonEmptyString(description)) {
+  async createBook(request: Request, response: Response): Promise<void> {
+    if (
+      !isRecord(request.body) ||
+      typeof request.body.title !== "string" ||
+      typeof request.body.description !== "string"
+    ) {
       response.status(400).json({
-        message: "El título y la descripción del libro son obligatorios",
+        message: "El título y la descripción deben ser texto",
       });
       return;
     }
 
     try {
-      const book = await Books.create({
-        title: title.trim(),
-        description: description.trim(),
+      const book = await this.bookService.createBook({
+        title: request.body.title,
+        description: request.body.description,
       });
       response.status(201).json(book);
     } catch (error) {
-      console.error("Failed to create book:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to create book:");
     }
   }
 
-  async updateBook(
-    request: Request,
-    response: Response,
-  ): Promise<void> {
+  async updateBook(request: Request, response: Response): Promise<void> {
     const id = parseBookId(request.params.id);
     if (id === null) {
       response.status(400).json({ message: "El ID del libro no es válido" });
       return;
     }
-
     if (!isRecord(request.body)) {
-      response.status(400).json({ message: "El cuerpo de la solicitud no es válido" });
-      return;
-    }
-    const { title, description } = request.body;
-    const values: { title?: string; description?: string } = {};
-    if (title !== undefined) {
-      if (!isNonEmptyString(title)) {
-        response.status(400).json({ message: "El título no es válido" });
-        return;
-      }
-      values.title = title.trim();
-    }
-    if (description !== undefined) {
-      if (!isNonEmptyString(description)) {
-        response.status(400).json({ message: "La descripción no es válida" });
-        return;
-      }
-      values.description = description.trim();
-    }
-    if (Object.keys(values).length === 0) {
       response.status(400).json({
-        message: "Debe indicar el título o la descripción para actualizar",
+        message: "El cuerpo de la solicitud no es válido",
       });
       return;
     }
 
-    try {
-      const book = await Books.findByPk(id);
-      if (!book) {
-        response.status(404).json({ message: "Libro no encontrado" });
+    const data: { title?: string; description?: string } = {};
+    if (request.body.title !== undefined) {
+      if (typeof request.body.title !== "string") {
+        response.status(400).json({ message: "El título debe ser texto" });
         return;
       }
+      data.title = request.body.title;
+    }
+    if (request.body.description !== undefined) {
+      if (typeof request.body.description !== "string") {
+        response.status(400).json({ message: "La descripción debe ser texto" });
+        return;
+      }
+      data.description = request.body.description;
+    }
 
-      await book.update(values);
-      response.status(200).json(book);
+    try {
+      response.status(200).json(await this.bookService.updateBook(id, data));
     } catch (error) {
-      console.error("Failed to update book:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to update book:");
     }
   }
 
@@ -155,13 +120,7 @@ class BookControllers {
       response.status(400).json({ message: "El ID del libro no es válido" });
       return;
     }
-
-    if (!isRecord(request.body)) {
-      response.status(400).json({ message: "El cuerpo de la solicitud no es válido" });
-      return;
-    }
-    const { status } = request.body;
-    if (!isBookStatus(status)) {
+    if (!isRecord(request.body) || !isBookStatus(request.body.status)) {
       response.status(400).json({
         message: "El estado debe ser DISPONIBLE, PRESTADO o EN_REPARACION",
       });
@@ -169,27 +128,11 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.findByPk(id);
-      if (!book) {
-        response.status(404).json({ message: "Libro no encontrado" });
-        return;
-      }
-
-      const previousStatus = book.status;
-      await book.update({ status });
-      if (previousStatus !== status) {
-        const event: BookStatusChangedEvent = {
-          bookId: book.id,
-          bookTitle: book.title,
-          previousStatus,
-          newStatus: status,
-        };
-        await this.eventPublisher.notify(event);
-      }
-      response.status(200).json(book);
+      response
+        .status(200)
+        .json(await this.bookService.changeBookStatus(id, request.body.status));
     } catch (error) {
-      console.error("Failed to change book status:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to change book status:");
     }
   }
 
@@ -201,18 +144,25 @@ class BookControllers {
     }
 
     try {
-      const book = await Books.findByPk(id);
-      if (!book) {
-        response.status(404).json({ message: "Libro no encontrado" });
-        return;
-      }
-
-      await book.destroy();
+      await this.bookService.deleteBook(id);
       response.status(204).end();
     } catch (error) {
-      console.error("Failed to delete book:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to delete book:");
     }
+  }
+
+  private handleError(
+    error: unknown,
+    response: Response,
+    context: string,
+  ): void {
+    if (error instanceof BookServiceError) {
+      response.status(error.statusCode).json({ message: error.message });
+      return;
+    }
+
+    console.error(context, error);
+    response.status(500).json({ message: "Error interno del servidor" });
   }
 }
 

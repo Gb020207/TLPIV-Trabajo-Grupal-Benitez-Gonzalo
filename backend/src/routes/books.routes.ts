@@ -1,12 +1,10 @@
 import { Router } from "express";
-import BookControllers from "../controllers/book.controllers.js";
+import type BookControllers from "../controllers/book.controllers.js";
 import { authenticate } from "../middlewares/authenticate.js";
 import { authorize } from "../middlewares/authorize.js";
-import type { ISubject } from "../observer/ISubject.js";
 
-export function createBooksRoutes(eventPublisher: ISubject): Router {
+export function createBooksRoutes(bookControllers: BookControllers): Router {
   const booksRoutes = Router();
-  const bookControllers = new BookControllers(eventPublisher);
 
   booksRoutes.use(authenticate);
   booksRoutes.get("/", authorize("book:read"), (request, response) =>

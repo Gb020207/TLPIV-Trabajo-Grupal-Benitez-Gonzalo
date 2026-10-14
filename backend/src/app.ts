@@ -5,9 +5,9 @@ import authRoutes from "./routes/auth.routes.js";
 import notificationsRoutes from "./routes/notifications.routes.js";
 import subscriptionsRoutes from "./routes/subscriptions.routes.js";
 import { createBooksRoutes } from "./routes/books.routes.js";
-import type { ISubject } from "./observer/ISubject.js";
+import type BookControllers from "./controllers/book.controllers.js";
 
-export function createApp(eventPublisher: ISubject): express.Express {
+export function createApp(bookControllers: BookControllers): express.Express {
   const app = express();
 
   app.use(cors());
@@ -22,7 +22,7 @@ export function createApp(eventPublisher: ISubject): express.Express {
   });
 
   app.use("/api/auth", authRoutes);
-  app.use("/api/books", createBooksRoutes(eventPublisher));
+  app.use("/api/books", createBooksRoutes(bookControllers));
   app.use("/api/subscriptions", subscriptionsRoutes);
   app.use("/api/notifications", notificationsRoutes);
   app.use("/api/users", AdminUserRoutes);
