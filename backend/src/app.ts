@@ -1,27 +1,24 @@
+import cors from "cors";
 import express from "express";
-import { env } from "./config/env.js";
-import { DatabaseConnection } from "./config/db.js";
+import authRoutes from "./routes/auth.routes.js";
+import booksRoutes from "./routes/books.routes.js";
 
-const app = express();
+export function createApp(): express.Express {
+  const app = express();
 
-app.use(express.json());
+  app.use(cors());
+  app.use(express.json());
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, message: "API funcionando" });
-});
-
-const start = async () => {
-  try {
-    const connection = DatabaseConnection.getInstance();
-    await connection.connect();
-
-    app.listen(env.apiPort, () => {
-      console.log(`Servidor escuchando en el puerto ${env.apiPort}`);
+  app.get("/health", (_request, response) => {
+    response.status(200).json({
+      status: "ok",
+      ok: true,
+      message: "API funcionando",
     });
-  } catch (error) {
-    console.error("No se pudo iniciar la aplicación:", error);
-    process.exit(1);
-  }
-};
+  });
 
-start();
+  app.use("/api/auth", authRoutes);
+  app.use("/api/books", booksRoutes);
+
+  return app;
+}

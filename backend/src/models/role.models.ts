@@ -1,6 +1,5 @@
-import { Model, DataTypes, Sequelize } from "sequelize";
-import type { Optional } from "sequelize"
-
+import { DataTypes, Model, Sequelize } from "sequelize";
+import type { Optional } from "sequelize";
 interface RolePermissionAttributes {
   id: number;
   roleId: number;
@@ -56,4 +55,3 @@ export class RolePermission
     );
   }
 }
-

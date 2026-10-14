@@ -1,6 +1,5 @@
 import { DataTypes, Model, Sequelize } from "sequelize";
-import type { Optional } from "sequelize"
-
+import type { Optional } from "sequelize";
 interface PermissionAttributes{
     id:number;
     name:string;

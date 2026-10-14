@@ -1,7 +1,7 @@
-import { Model, Sequelize, DataTypes } from "sequelize";
+import { DataTypes, Model, Sequelize } from "sequelize";
 import type { Optional } from "sequelize";
 
-export type BookStatus =|"DISPONIBLE"|"PRESTADO"|"EN_REPARACION";
+export type BookStatus = "DISPONIBLE" | "PRESTADO" | "EN_REPARACION";
 interface BooksAttributes{
     id:number;
     title:string;

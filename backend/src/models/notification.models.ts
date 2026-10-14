@@ -1,5 +1,5 @@
-import { Model, Sequelize, DataTypes } from "sequelize";
-import type { Optional } from "sequelize"
+import { DataTypes, Model, Sequelize } from "sequelize";
+import type { Optional } from "sequelize";
 interface NotificationAtrributes{
     id:number;
     userId:number;

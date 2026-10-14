@@ -1,6 +1,5 @@
 import { DataTypes, Model, Sequelize } from "sequelize";
-import type { Optional } from "sequelize"
-
+import type { Optional } from "sequelize";
 
 interface UserAttributes{
     id:number,
@@ -35,4 +34,3 @@ export class User extends Model<UserAttributes,UserCreationAttributes> implement
         })
     }
 }
-
