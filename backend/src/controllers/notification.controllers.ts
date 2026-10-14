@@ -1,7 +1,18 @@
 import type { Request, Response } from "express";
-import { Notification } from "../models/notification.models.js";
+import { NotificationService } from "../services/NotificationService.js";
+import { ServiceError } from "../services/ServiceError.js";
+
+function parsePositiveInteger(value: unknown): number | null {
+  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
 
 class NotificationControllers {
+  constructor(private readonly notificationService: NotificationService) {}
+
   async listMine(request: Request, response: Response): Promise<void> {
     const userId = request.auth?.userId;
     if (!userId) {
@@ -10,47 +21,50 @@ class NotificationControllers {
     }
 
     try {
-      const notifications = await Notification.findAll({
-        where: { userId },
-        order: [["createdAt", "DESC"]],
-      });
-      const unreadCount = notifications.filter(({ read }) => !read).length;
-      response.status(200).json({ notifications, unreadCount });
+      response
+        .status(200)
+        .json(await this.notificationService.listMine(userId));
     } catch (error) {
-      console.error("Failed to list notifications:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to list notifications:");
     }
   }
 
   async markAsRead(request: Request, response: Response): Promise<void> {
     const userId = request.auth?.userId;
-    const notificationId = Number(request.params.id);
+    const notificationId = parsePositiveInteger(request.params.id);
     if (!userId) {
       response.status(401).json({ message: "Autenticación requerida" });
       return;
     }
-    if (!Number.isSafeInteger(notificationId) || notificationId < 1) {
-      response.status(400).json({ message: "El ID de la notificación no es válido" });
+    if (notificationId === null) {
+      response.status(400).json({
+        message: "El ID de la notificación no es válido",
+      });
       return;
     }
 
     try {
-      const notification = await Notification.findOne({
-        where: { id: notificationId, userId },
-      });
-      if (!notification) {
-        response.status(404).json({ message: "Notificación no encontrada" });
-        return;
-      }
-
-      if (!notification.read) {
-        await notification.update({ read: true });
-      }
-      response.status(200).json(notification);
+      response
+        .status(200)
+        .json(
+          await this.notificationService.markAsRead(userId, notificationId),
+        );
     } catch (error) {
-      console.error("Failed to mark notification as read:", error);
-      response.status(500).json({ message: "Error interno del servidor" });
+      this.handleError(error, response, "Failed to mark notification as read:");
     }
+  }
+
+  private handleError(
+    error: unknown,
+    response: Response,
+    context: string,
+  ): void {
+    if (error instanceof ServiceError) {
+      response.status(error.statusCode).json({ message: error.message });
+      return;
+    }
+    console.error(context, error);
+    response.status(500).json({ message: "Error interno del servidor" });
   }
 }
 

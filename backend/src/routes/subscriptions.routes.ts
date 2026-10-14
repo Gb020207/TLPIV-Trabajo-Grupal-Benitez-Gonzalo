@@ -1,24 +1,30 @@
 import { Router } from "express";
-import SubscriptionControllers from "../controllers/suscription.models.js";
+import type SubscriptionControllers from "../controllers/subscription.controllers.js";
 import { authenticate } from "../middlewares/authenticate.js";
 import { authorize } from "../middlewares/authorize.js";
 
-const subscriptionsRoutes = Router();
-const subscriptionsController = new SubscriptionControllers();
+export function createSubscriptionsRoutes(
+  subscriptionsController: SubscriptionControllers,
+): Router {
+  const subscriptionsRoutes = Router();
 
-subscriptionsRoutes.use(authenticate);
-subscriptionsRoutes.get("/", authorize("subscription:create"), (request, response) =>
-  subscriptionsController.listMySubscriptions(request, response),
-);
-subscriptionsRoutes.post(
-  "/:bookId",
-  authorize("subscription:create"),
-  (request, response) => subscriptionsController.subscribe(request, response),
-);
-subscriptionsRoutes.delete(
-  "/:bookId",
-  authorize("subscription:delete"),
-  (request, response) => subscriptionsController.unsubscribe(request, response),
-);
+  subscriptionsRoutes.use(authenticate);
+  subscriptionsRoutes.get(
+    "/",
+    authorize("subscription:create"),
+    (request, response) => subscriptionsController.listMine(request, response),
+  );
+  subscriptionsRoutes.post(
+    "/:bookId",
+    authorize("subscription:create"),
+    (request, response) => subscriptionsController.subscribe(request, response),
+  );
+  subscriptionsRoutes.delete(
+    "/:bookId",
+    authorize("subscription:delete"),
+    (request, response) =>
+      subscriptionsController.unsubscribe(request, response),
+  );
 
-export default subscriptionsRoutes;
+  return subscriptionsRoutes;
+}
