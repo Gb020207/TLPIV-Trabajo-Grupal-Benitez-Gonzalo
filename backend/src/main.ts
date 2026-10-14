@@ -3,6 +3,9 @@ import { DatabaseConnection } from "./config/db.js";
 import { env } from "./config/env.js";
 import { seedRolesAndPermissions } from "./database/seed.js";
 import { initializeModels } from "./models/associations.js";
+import { EventPublisher } from "./observer/EventPublisher.js";
+import { NotifierFactory } from "./notifications/NotifierFactory.js";
+import { NotificationService } from "./services/NotificationService.js";
 
 async function start(): Promise<void> {
     if (!Number.isInteger(env.apiPort) || env.apiPort < 1 || env.apiPort > 65535) {
@@ -17,7 +20,10 @@ async function start(): Promise<void> {
     await sequelize.sync();
     await seedRolesAndPermissions(sequelize);
 
-    const app = createApp();
+    const eventPublisher = new EventPublisher();
+    eventPublisher.attach(new NotificationService(new NotifierFactory()));
+
+    const app = createApp(eventPublisher);
     app.listen(env.apiPort, () => {
         console.log(`Backend listening on port ${env.apiPort}`);
     });

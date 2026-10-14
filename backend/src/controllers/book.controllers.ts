@@ -1,5 +1,7 @@
 import type { Request, Response } from "express";
 import { Books, type BookStatus } from "../models/book.models.js";
+import type { ISubject } from "../observer/ISubject.js";
+import type { BookStatusChangedEvent } from "../observer/book-status-event.js";
 
 const bookStatuses: readonly BookStatus[] = [
   "DISPONIBLE",
@@ -31,6 +33,8 @@ function isBookStatus(value: unknown): value is BookStatus {
 }
 
 class BookControllers {
+  constructor(private readonly eventPublisher: ISubject) {}
+
   async listBooks(_request: Request, response: Response): Promise<void> {
     try {
       const books = await Books.findAll({ order: [["id", "ASC"]] });
@@ -171,7 +175,17 @@ class BookControllers {
         return;
       }
 
+      const previousStatus = book.status;
       await book.update({ status });
+      if (previousStatus !== status) {
+        const event: BookStatusChangedEvent = {
+          bookId: book.id,
+          bookTitle: book.title,
+          previousStatus,
+          newStatus: status,
+        };
+        await this.eventPublisher.notify(event);
+      }
       response.status(200).json(book);
     } catch (error) {
       console.error("Failed to change book status:", error);
