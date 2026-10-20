@@ -59,10 +59,11 @@ Los controllers traducen HTTP y validan entradas; los servicios coordinan reglas
 
 **Archivos:** `backend/src/notifications/NotifierFactory.ts`, `backend/src/notifications/INotifier.ts`.
 
-La fábrica permite registrar un nuevo creador de canal con `register()` sin cambiar `NotificationService` ni la interfaz común.
+La fábrica registra los canales disponibles con `register()` y `NotificationService` solo solicita el envío a todos los canales registrados. Así, un nuevo canal se incorpora durante la composición de dependencias sin modificar la lógica del servicio.
 
 ```ts
 factory.register("nuevo-canal", () => new NewChannelNotifier());
+await factory.sendToAll(notification);
 ```
 
 ### L — Sustitución de Liskov

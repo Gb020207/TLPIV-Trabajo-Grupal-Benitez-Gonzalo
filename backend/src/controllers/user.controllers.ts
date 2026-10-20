@@ -18,6 +18,15 @@ class UserControllers {
     }
   }
 
+  async listRoles(_request: Request, response: Response): Promise<void> {
+    try {
+      response.status(200).json(await this.users.listRoles());
+    } catch (error) {
+      console.error("Failed to list roles:", error);
+      response.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
   async assignRole(request: Request, response: Response): Promise<void> {
     const userId = parseId(request.params.id);
     const roleId =

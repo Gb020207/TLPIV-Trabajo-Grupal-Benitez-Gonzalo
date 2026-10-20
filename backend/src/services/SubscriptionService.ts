@@ -22,6 +22,13 @@ export class SubscriptionService {
     };
   }
 
+  async isSubscribed(userId: number, bookId: number): Promise<boolean | null> {
+    if (!(await this.books.findById(bookId))) {
+      return null;
+    }
+    return (await this.subscriptions.find(userId, bookId)) !== null;
+  }
+
   unsubscribe(userId: number, bookId: number): Promise<number> {
     return this.subscriptions.delete(userId, bookId);
   }

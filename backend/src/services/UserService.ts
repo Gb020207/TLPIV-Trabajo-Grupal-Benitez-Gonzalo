@@ -13,6 +13,10 @@ export class UserService {
     return this.users.list();
   }
 
+  listRoles(): Promise<Role[]> {
+    return this.roles.findAll();
+  }
+
   async assignRole(
     userId: number,
     roleId: number,

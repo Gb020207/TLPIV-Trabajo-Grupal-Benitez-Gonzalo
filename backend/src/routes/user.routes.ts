@@ -9,6 +9,9 @@ export function createUserRoutes(service: UserService): Router {
   const controllers = new UserControllers(service);
 
   userRoutes.use(authenticate, authorize("user:read"));
+  userRoutes.get("/roles", (request, response) =>
+    controllers.listRoles(request, response),
+  );
   userRoutes.get("/", (request, response) => controllers.listUsers(request, response));
   userRoutes.patch(
     "/:id/role",

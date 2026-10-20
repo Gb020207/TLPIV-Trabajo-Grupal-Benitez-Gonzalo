@@ -12,6 +12,27 @@ function parseId(value: unknown): number | null {
 class SubscriptionControllers {
   constructor(private readonly subscriptions: SubscriptionService) {}
 
+  async getStatus(request: Request, response: Response): Promise<void> {
+    const bookId = parseId(request.params.bookId);
+    const userId = request.auth?.userId;
+    if (bookId === null || userId === undefined) {
+      response.status(400).json({ message: "El ID del libro no es válido" });
+      return;
+    }
+
+    try {
+      const subscribed = await this.subscriptions.isSubscribed(userId, bookId);
+      if (subscribed === null) {
+        response.status(404).json({ message: "Libro no encontrado" });
+        return;
+      }
+      response.status(200).json({ subscribed });
+    } catch (error) {
+      console.error("Failed to get subscription status:", error);
+      response.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
   async subscribe(request: Request, response: Response): Promise<void> {
     const bookId = parseId(request.params.bookId);
     const userId = request.auth?.userId;

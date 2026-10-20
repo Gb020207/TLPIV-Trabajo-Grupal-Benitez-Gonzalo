@@ -19,8 +19,7 @@ export class NotificationService implements IObserver {
                 message: `El libro "${event.bookTitle}" cambió su estado de ${event.previousStatus} a ${event.status}.`,
             });
 
-            await this.notifierFactory.create("inapp").send(notification);
-            await this.notifierFactory.create("console").send(notification);
+            await this.notifierFactory.sendToAll(notification);
         }
     }
 }

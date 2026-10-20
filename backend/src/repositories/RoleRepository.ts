@@ -4,6 +4,10 @@ import { Role } from "../models/roles.models.js";
 import type { IRoleRepository } from "./interfaces/IRoleRepository.js";
 
 export class RoleRepository implements IRoleRepository {
+  findAll(): Promise<Role[]> {
+    return Role.findAll({ order: [["id", "ASC"]] });
+  }
+
   findById(id: number): Promise<Role | null> {
     return Role.findByPk(id);
   }

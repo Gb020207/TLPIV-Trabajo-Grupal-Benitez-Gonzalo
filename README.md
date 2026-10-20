@@ -6,12 +6,12 @@
 
 ## Integrantes
 
-- Gonzalo Benitez
-- Agustin Rolon
+- Gonzalo Benitez — GitHub: `Gb020207`
+- Agustin Rolon — agregar usuario de GitHub
 
 ## Descripción
 
-API para administrar libros y sus estados, permitir que usuarios sigan libros y notificar a cada suscriptor cuando cambia su estado. El backend aplica permisos por rol y guarda las notificaciones en PostgreSQL, además de registrarlas en la consola.
+Aplicación web para administrar libros y sus estados, permitir que usuarios sigan libros y notificarles cuando cambia su disponibilidad. Incluye autenticación, permisos por rol, una interfaz web y una API REST.
 
 ## Requisitos previos
 
@@ -28,7 +28,11 @@ Copy-Item .env.example .env
 docker compose up --build
 ```
 
-El backend espera a que PostgreSQL pase su healthcheck, crea las tablas y carga los roles, permisos y usuarios de prueba al iniciar. La API queda disponible en `http://localhost:3000`; su verificación de salud es `http://localhost:3000/health`.
+Compose levanta PostgreSQL, la API y la aplicación React. El backend espera a que la base de datos pase su healthcheck, crea las tablas y carga los roles, permisos y usuarios de prueba automáticamente.
+
+- Frontend: <http://localhost:5173>
+- API: <http://localhost:3000>
+- Estado de la API: <http://localhost:3000/health>
 
 Para detener los servicios:
 
@@ -40,7 +44,7 @@ Los datos persisten en el volumen `postgres_data`. Para eliminar también la bas
 
 > Las credenciales incluidas en `.env.example` son exclusivamente para desarrollo local. Cambiá las contraseñas y `JWT_SECRET` antes de desplegar el proyecto en un entorno compartido o público. No publiques el archivo `.env`.
 
-## Ejecución local sin contenedores
+## Ejecución local sin Docker
 
 La base de datos sigue ejecutándose en Docker. Desde la raíz:
 
@@ -48,7 +52,7 @@ La base de datos sigue ejecutándose en Docker. Desde la raíz:
 docker compose up -d db
 ```
 
-En otra terminal, desde `backend/`:
+En una terminal, desde `backend/`:
 
 ```powershell
 npm ci
@@ -56,14 +60,15 @@ $env:DB_HOST = "localhost"
 npm run dev
 ```
 
-Para compilar y ejecutar la versión compilada:
+En otra terminal, desde `frontend/`:
 
 ```powershell
-npm run build
-npm start
+npm ci
+$env:VITE_API_URL = "http://localhost:3000/api"
+npm run dev
 ```
 
-El frontend todavía no está implementado; por ahora el proyecto expone la API y la base de datos.
+Vite informa la dirección local al iniciar (por defecto, <http://localhost:5173>). Para compilar el backend, ejecutar `npm run build` y luego `npm start` desde `backend/`; para compilar el frontend, ejecutar `npm run build` desde `frontend/`.
 
 ## Variables de entorno
 
@@ -75,7 +80,9 @@ El frontend todavía no está implementado; por ahora el proyecto expone la API 
 | `DB_PASSWORD` | Contraseña PostgreSQL | `cambiar-esta-clave` |
 | `DB_NAME` | Nombre de la base | `biblioteca` |
 | `JWT_SECRET` | Secreto para firmar tokens | Reemplazar por uno aleatorio |
-| `API_PORT` | Puerto HTTP del backend | `3000` |
+| `API_PORT` | Puerto publicado para la API | `3000` |
+| `FRONTEND_PORT` | Puerto publicado para la aplicación web | `5173` |
+| `VITE_API_URL` | URL de la API para el frontend local | `http://localhost:3000/api` |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Usuario de prueba administrador | `admin@tp.com` |
 | `SEED_OPERATOR_EMAIL` / `SEED_OPERATOR_PASSWORD` | Usuario de prueba operador | `operador@tp.com` |
 | `SEED_USER_EMAIL` / `SEED_USER_PASSWORD` | Usuario de prueba común | `usuario@tp.com` |
@@ -94,7 +101,7 @@ Con los valores iniciales de `.env.example`:
 
 ## Endpoints principales
 
-Las rutas protegidas requieren `Authorization: Bearer <token>`. Las respuestas JSON de registro e inicio de sesión incluyen `token` y los datos públicos del usuario junto con sus permisos.
+Las rutas protegidas requieren el encabezado `Authorization: Bearer <token>`. El registro y el inicio de sesión devuelven un token JWT y los datos públicos del usuario junto con sus permisos.
 
 | Método | Ruta | Permiso |
 |---|---|---|
@@ -107,22 +114,24 @@ Las rutas protegidas requieren `Authorization: Bearer <token>`. Las respuestas J
 | `PATCH` | `/api/books/:id` | `book:update` |
 | `PATCH` | `/api/books/:id/status` | `book:change-status` |
 | `DELETE` | `/api/books/:id` | `book:delete` |
+| `GET` | `/api/subscriptions/books/:bookId` | `subscription:create` |
 | `POST` | `/api/subscriptions/books/:bookId` | `subscription:create` |
 | `DELETE` | `/api/subscriptions/books/:bookId` | `subscription:delete` |
 | `GET` | `/api/notifications` | `notification:read` |
 | `GET` | `/api/notifications/unread-count` | `notification:read` |
 | `PATCH` | `/api/notifications/:id/read` | `notification:read` |
 | `GET` | `/api/users` | `user:read` |
+| `GET` | `/api/users/roles` | `user:read` |
 | `PATCH` | `/api/users/:id/role` | `user:assign-role` |
 
-El cuerpo para crear un libro es `{"title":"Título","description":"Descripción"}`. Para cambiar el estado: `{"status":"PRESTADO"}`; los valores admitidos son `DISPONIBLE`, `PRESTADO` y `EN_REPARACION`. Para asignar un rol: `{"roleId":1}` (los roles disponibles se cargan al iniciar).
+El cuerpo para crear o editar un libro es `{"title":"Título","description":"Descripción"}`. Para cambiar el estado: `{"status":"PRESTADO"}`; los valores admitidos son `DISPONIBLE`, `PRESTADO` y `EN_REPARACION`. Para asignar un rol: `{"roleId":1}` (los roles disponibles se cargan al iniciar).
 
-## Flujo de notificaciones
+## Cómo probar el flujo de notificaciones
 
-1. Iniciar sesión como `usuario` y usar el token para suscribirse con `POST /api/subscriptions/books/:bookId`.
-2. Cambiar el estado de ese libro como `operador` o `admin`.
-3. Consultar `GET /api/notifications` como el usuario suscripto y, si corresponde, marcar la notificación con `PATCH /api/notifications/:id/read`.
-4. Comprobar la línea emitida por el adaptador con:
+1. Ingresar al frontend como `usuario@tp.com` con la contraseña `Usuario123!` y seguir un libro.
+2. En otra ventana o perfil, ingresar como `operador@tp.com` con la contraseña `Operador123!` y cambiar el estado de ese libro.
+3. Volver a la sesión de `usuario`: el contador se actualiza por polling y el aviso aparece en la bandeja de notificaciones. Desde ahí se puede marcar como leído.
+4. Verificar la salida del adaptador de consola:
 
    ```powershell
    docker compose logs -f backend
@@ -130,4 +139,4 @@ El cuerpo para crear un libro es `{"title":"Título","description":"Descripción
 
 ## Patrones y principios SOLID
 
-La ubicación y el propósito de los patrones y principios SOLID se documentan en [PATTERNS.md](./PATTERNS.md).
+La ubicación, el propósito y ejemplos de los patrones y principios SOLID se documentan en [PATTERNS.md](./PATTERNS.md).
