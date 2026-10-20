@@ -1,0 +1,1 @@
+{"version":3,"file":"books.routes.d.ts","sourceRoot":"","sources":["../../../backend/src/routes/books.routes.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,SAAS,CAAC;AACjC,OAAO,KAAK,eAAe,MAAM,oCAAoC,CAAC;AAItE,wBAAgB,iBAAiB,CAAC,eAAe,EAAE,eAAe,GAAG,MAAM,CA0B1E"}

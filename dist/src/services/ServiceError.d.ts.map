@@ -1,0 +1,1 @@
+{"version":3,"file":"ServiceError.d.ts","sourceRoot":"","sources":["../../../backend/src/services/ServiceError.ts"],"names":[],"mappings":"AAAA,qBAAa,YAAa,SAAQ,KAAK;aAGnB,UAAU,EAAE,MAAM;IAFpC,YACE,OAAO,EAAE,MAAM,EACC,UAAU,EAAE,MAAM,EAInC;CACF"}

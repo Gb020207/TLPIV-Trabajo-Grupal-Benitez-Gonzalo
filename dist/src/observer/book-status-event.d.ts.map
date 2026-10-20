@@ -1,0 +1,1 @@
+{"version":3,"file":"book-status-event.d.ts","sourceRoot":"","sources":["../../../backend/src/observer/book-status-event.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,0BAA0B,CAAC;AAE3D,MAAM,WAAW,sBAAsB;IACrC,MAAM,EAAE,MAAM,CAAC;IACf,SAAS,EAAE,MAAM,CAAC;IAClB,cAAc,EAAE,UAAU,CAAC;IAC3B,SAAS,EAAE,UAAU,CAAC;CACvB"}
