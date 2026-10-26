@@ -1,7 +1,7 @@
 import { createApp } from "./app.js";
 import { DatabaseConnection } from "./config/db.js";
 import { env } from "./config/env.js";
-import { seedRolesAndPermissions } from "./database/seed.js";
+import { seedBooks, seedRolesAndPermissions } from "./database/seed.js";
 import { initializeModels } from "./models/associations.js";
 import { EventPublisher } from "./observer/EventPublisher.js";
 import { NotifierFactory } from "./notifications/NotifierFactory.js";
@@ -29,6 +29,7 @@ async function start(): Promise<void> {
     await database.connect();
     await sequelize.sync();
     await seedRolesAndPermissions(sequelize, env.seedUsers);
+    await seedBooks();
 
     const eventPublisher = new EventPublisher();
     const books = new BookRepository();

@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import type { Sequelize, Transaction } from "sequelize";
+import { Books } from "../models/book.models.js";
 import { Permission } from "../models/permission.js";
 import { RolePermission } from "../models/role.models.js";
 import { Role } from "../models/roles.models.js";
@@ -54,6 +55,38 @@ const roles = [
         ],
     },
 ] as const;
+
+const sampleBooks = [
+    {
+        title: "El Principito",
+        description: "Un pequeño príncipe viaja por el universo y descubre el valor de la amistad y la responsabilidad.",
+    },
+    {
+        title: "Clean Code",
+        description: "Una guía práctica para escribir software claro, legible y fácil de mantener.",
+    },
+    {
+        title: "Fundación",
+        description: "Una historia de ciencia ficción sobre la caída de un imperio y el futuro de una civilización.",
+    },
+    {
+        title: "1984",
+        description: "Una novela distópica sobre la vigilancia, la censura y el control de la información.",
+    },
+    {
+        title: "El Aleph",
+        description: "Relatos de Jorge Luis Borges que exploran laberintos, memoria y otros enigmas.",
+    },
+] as const;
+
+export async function seedBooks(): Promise<void> {
+    for (const book of sampleBooks) {
+        await Books.findOrCreate({
+            where: { title: book.title },
+            defaults: book,
+        });
+    }
+}
 
 export async function seedRolesAndPermissions(
     sequelize: Sequelize,

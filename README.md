@@ -87,7 +87,7 @@ Vite informa la dirección local al iniciar (por defecto, <http://localhost:5173
 | `SEED_OPERATOR_EMAIL` / `SEED_OPERATOR_PASSWORD` | Usuario de prueba operador | `operador@tp.com` |
 | `SEED_USER_EMAIL` / `SEED_USER_PASSWORD` | Usuario de prueba común | `usuario@tp.com` |
 
-Los tres usuarios de prueba se crean al arrancar si todavía no existen. Las contraseñas se guardan con bcrypt. El seed sincroniza los roles de esas cuentas con los roles de prueba configurados en el entorno.
+Los tres usuarios de prueba se crean al arrancar si todavía no existen. Las contraseñas se guardan con bcrypt. El seed sincroniza los roles de esas cuentas con los roles de prueba configurados en el entorno y carga libros de ejemplo si todavía no existen.
 
 ## Usuarios de prueba
 

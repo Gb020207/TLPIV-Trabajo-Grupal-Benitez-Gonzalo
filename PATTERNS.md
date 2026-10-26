@@ -55,6 +55,13 @@ async send(notification: Notification): Promise<void> {
 
 Los controllers traducen HTTP y validan entradas; los servicios coordinan reglas de negocio; los repositorios encapsulan las consultas y escrituras Sequelize.
 
+```ts
+// BookService coordina el caso de uso; BookRepository resuelve la persistencia.
+list(): Promise<Books[]> {
+  return this.books.findAll();
+}
+```
+
 ### O — Abierto/cerrado
 
 **Archivos:** `backend/src/notifications/NotifierFactory.ts`, `backend/src/notifications/INotifier.ts`.
@@ -72,11 +79,25 @@ await factory.sendToAll(notification);
 
 Ambos canales implementan el mismo contrato `send(notification): Promise<void>`. El consumidor puede sustituir uno por otro o enviar la misma notificación por ambos sin alterar sus precondiciones.
 
+```ts
+async send(notification: Notification): Promise<void> {
+  await this.notifications.create(notification.userId, notification.bookId, notification.message);
+}
+```
+
 ### I — Segregación de interfaces
 
 **Archivos:** `backend/src/repositories/interfaces/`.
 
 Cada interfaz delimita las operaciones que necesita un tipo de persistencia, en lugar de exponer un repositorio genérico con métodos irrelevantes para sus consumidores. Por ejemplo, `IRoleRepository` resuelve roles y permisos, mientras `IBookRepository` opera sobre libros.
+
+```ts
+export interface IBookRepository {
+  findAll(): Promise<Books[]>;
+  findById(id: number): Promise<Books | null>;
+  create(input: BookInput): Promise<Books>;
+}
+```
 
 ### D — Inversión de dependencias
 
